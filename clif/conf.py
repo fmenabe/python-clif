@@ -3,7 +3,7 @@
 import os
 import sys
 import yaml
-import cli.logger as logger
+import clif.logger as logger
 from . import CliError, hooks
 from pprint import pformat
 
