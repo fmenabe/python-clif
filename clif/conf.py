@@ -3,6 +3,7 @@
 import os
 import sys
 import yaml
+import yamlordereddictloader
 import clif.logger as logger
 from . import CliError, hooks
 from pprint import pformat
@@ -15,7 +16,7 @@ def init(args):
         raise CliError('no configuration file')
 
     try:
-        config = yaml.load(open(args.conf_file)) or {}
+        config = yaml.load(open(args.conf_file), Loader=yamlordereddictloader.Loader) or {}
     except Exception as err:
         raise CliError('unable to read the main configuration file: %s' % err)
 
@@ -73,7 +74,7 @@ def load_file(filepath, root=True):
     filename, fileext = os.path.splitext(os.path.basename(filepath))
     try:
         if fileext == '.yml':
-            conf = yaml.load(open(filepath))
+            conf = yaml.load(open(filepath), Loader=yamlordereddictloader.Loader)
             if root:
                 for attr, value in conf.items():
                     setattr(_SELF, attr.replace('-', '_').upper(), value)
