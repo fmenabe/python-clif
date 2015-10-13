@@ -7,6 +7,7 @@ import yamlordereddictloader
 import clif.logger as logger
 from . import CliError, hooks
 from pprint import pformat
+from collections import OrderedDict
 
 _SELF = sys.modules[__name__]
 
@@ -46,7 +47,8 @@ def init(args):
 def replace_paths(value):
     return {str: lambda: value.replace('__FILE__', sys.path[0]),
             list: lambda: [replace_paths(elt) for elt in value],
-            dict: lambda: {key: replace_paths(val) for key, val in value.items()}
+            dict: lambda: {key: replace_paths(val) for key, val in value.items()},
+            OrderedDict: lambda: {key: replace_paths(val) for key, val in value.items()}
            }.get(type(value), lambda: value)()
 
 
@@ -75,6 +77,7 @@ def load_file(filepath, root=True):
     try:
         if fileext == '.yml':
             conf = yaml.load(open(filepath), Loader=yamlordereddictloader.Loader)
+            conf = replace_paths(conf)
             if root:
                 for attr, value in conf.items():
                     setattr(_SELF, attr.replace('-', '_').upper(), value)
