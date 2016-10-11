@@ -4,8 +4,7 @@ import os
 import sys
 import yaml
 import yamlordereddictloader
-import clif.logger as logger
-from . import CliError, hooks
+import clif
 from pprint import pformat
 from collections import OrderedDict
 
@@ -14,35 +13,32 @@ _SELF = sys.modules[__name__]
 
 def init(args):
     if 'conf_file' not in args:
-        raise CliError('no configuration file')
+        raise clif.CliError('no configuration file')
 
     try:
         config = yaml.load(open(args.conf_file), Loader=yamlordereddictloader.Loader) or {}
     except Exception as err:
-        raise CliError('unable to read the main configuration file: %s' % err)
+        config = {}
 
     for param, value in config.items():
         setattr(_SELF, param.upper(), replace_paths(value))
 
     # Init logs.
-    commands = [value
-                for (arg, value) in sorted(args)
-                if arg.startswith('command')]
-    logger.init('-'.join(commands),
-                os.path.join(args.logdir, *commands),
-                args.loglevel)
+    commands = [value for (arg, value) in sorted(args) if arg.startswith('command')]
+    clif.logger.init('-'.join(commands),
+                     os.path.join(args.logdir, *commands),
+                     args.loglevel)
     load_commands_conf(commands)
-
-    logger.debug('configuration parameters:\n%s' %
-                 pformat({attr: getattr(_SELF, attr)
-                          for attr in vars(_SELF)
-                          if attr.isupper() and not attr.startswith('_')}))
 
     for hook in hooks:
         hook()
 #        setattr(_SELF, hook.__name__, hook)
 #        getattr(_SELF, hook.__name__)()
 
+    clif.logger.debug('configuration parameters:\n%s' %
+                      pformat({attr: getattr(_SELF, attr)
+                               for attr in vars(_SELF)
+                               if attr.isupper() and not attr.startswith('_')}))
 
 def replace_paths(value):
     return {str: lambda: value.replace('__FILE__', sys.path[0]),
@@ -50,7 +46,6 @@ def replace_paths(value):
             dict: lambda: {key: replace_paths(val) for key, val in value.items()},
             OrderedDict: lambda: {key: replace_paths(val) for key, val in value.items()}
            }.get(type(value), lambda: value)()
-
 
 def load_commands_conf(commands):
     # Load intermediary configuration files.
@@ -70,9 +65,8 @@ def load_commands_conf(commands):
             if os.path.isfile(filepath):
                 load_file(filepath, False)
 
-
 def load_file(filepath, root=True):
-    logger.debug("loading configuration file '%s'" % filepath)
+    clif.logger.debug("loading configuration file '%s'" % filepath)
     filename, fileext = os.path.splitext(os.path.basename(filepath))
     try:
         if fileext == '.yml':
@@ -87,6 +81,6 @@ def load_file(filepath, root=True):
             with open(filepath) as fhandler:
                 setattr(_SELF, filename.upper(), fhandler.read())
     except Exception as err:
-        logger.error("unable to load configuration file '%s': %s"
+        clif.logger.error("unable to load configuration file '%s': %s"
                       % (filepath, err),
                      quit=True)
