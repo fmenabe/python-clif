@@ -12,6 +12,7 @@ _SELF = sys.modules[__name__]
 
 
 def init(args):
+    setattr(_SELF, 'args', args)
     if 'conf_file' not in args:
         raise clif.CliError('no configuration file')
 
