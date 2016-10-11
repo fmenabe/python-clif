@@ -31,11 +31,6 @@ def init(args):
                      args.loglevel)
     load_commands_conf(commands)
 
-    for hook in hooks:
-        hook()
-#        setattr(_SELF, hook.__name__, hook)
-#        getattr(_SELF, hook.__name__)()
-
     clif.logger.debug('configuration parameters:\n%s' %
                       pformat({attr: getattr(_SELF, attr)
                                for attr in vars(_SELF)
