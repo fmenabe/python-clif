@@ -5,6 +5,7 @@ import sys
 import yaml
 import yamlordereddictloader
 import clif
+import clif.logger as logger
 from pprint import pformat
 from collections import OrderedDict
 
@@ -26,15 +27,15 @@ def init(args):
 
     # Init logs.
     commands = [value for (arg, value) in sorted(args) if arg.startswith('command')]
-    clif.logger.init('-'.join(commands),
-                     os.path.join(args.logdir, *commands),
-                     args.loglevel)
+    logger.init('-'.join(commands),
+                os.path.join(args.logdir, *commands),
+                args.loglevel)
     load_commands_conf(commands)
 
-    clif.logger.debug('configuration parameters:\n%s' %
-                      pformat({attr: getattr(_SELF, attr)
-                               for attr in vars(_SELF)
-                               if attr.isupper() and not attr.startswith('_')}))
+    logger.debug('configuration parameters:\n%s' %
+                 pformat({attr: getattr(_SELF, attr)
+                          for attr in vars(_SELF)
+                          if attr.isupper() and not attr.startswith('_')}))
 
 def replace_paths(value):
     return {str: lambda: value.replace('__FILE__', sys.path[0]),
@@ -62,7 +63,7 @@ def load_commands_conf(commands):
                 load_file(filepath, False)
 
 def load_file(filepath, root=True):
-    clif.logger.debug("loading configuration file '%s'" % filepath)
+    logger.debug("loading configuration file '%s'" % filepath)
     filename, fileext = os.path.splitext(os.path.basename(filepath))
     try:
         if fileext == '.yml':
@@ -77,6 +78,5 @@ def load_file(filepath, root=True):
             with open(filepath) as fhandler:
                 setattr(_SELF, filename.upper(), fhandler.read())
     except Exception as err:
-        clif.logger.error("unable to load configuration file '%s': %s"
-                      % (filepath, err),
+        logger.error("unable to load configuration file '%s': %s" % (filepath, err),
                      quit=True)
